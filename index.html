@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DriveGuard-Edge | Hybrid Offline DMS & SLM Co-Pilot POC</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe face tracking dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- Ambient Warning Overlay -->
+  <div id="hazardOverlay" class="hazard-overlay"></div>
+
+  <div class="app-container">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-pulse"></div>
+        <h1>DRIVEGUARD<span>EDGE</span></h1>
+        <div class="badge">ACTIVE SAFETY AGENT</div>
+      </div>
+      <div class="system-status">
+        <div class="status-item">
+          <span class="status-label">HARDWARE:</span>
+          <span class="status-value">i.MX8 Edge SoC</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">NET STATE:</span>
+          <span class="status-value highlight-green">100% OFFLINE</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">RAM FOOTPRINT:</span>
+          <span id="ramUsage" class="status-value">1.44 GB / 2.0 GB</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">DMS FPS:</span>
+          <span id="dmsFps" class="status-value highlight-blue">30.0 FPS</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Dashboard Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- COLUMN 1: DMS / COMPUTER VISION -->
+      <section class="panel glass-panel" id="dmsPanel">
+        <div class="panel-header">
+          <h2>1. COMPUTER VISION (DMS)</h2>
+          <div class="panel-status" id="dmsStatus">MONITORING</div>
+        </div>
+        <div class="panel-body">
+          <div class="camera-container">
+            <canvas id="dmsCanvas" width="400" height="300"></canvas>
+            <video id="webcamVideo" autoplay playsinline style="display:none;"></video>
+            <div class="camera-overlay">
+              <div class="scan-line"></div>
+              <div class="tracking-indicator">DMS INFERENCE QUANTIZED (INT8)</div>
+            </div>
+          </div>
+
+          <!-- Quick Simulation Scenarios -->
+          <div class="control-group">
+            <h3>SIMULATE DRIVER STATES</h3>
+            <div class="button-grid">
+              <button class="btn state-btn active" data-state="normal">NORMAL</button>
+              <button class="btn state-btn alert-red" data-state="drowsy">DROWSY (ASLEEP)</button>
+              <button class="btn state-btn alert-amber" data-state="distracted">DISTRACTED</button>
+              <button class="btn state-btn alert-amber" data-state="phone">PHONE DISTRACTION</button>
+            </div>
+            <div class="camera-toggle-row" style="margin-top: 0.5rem;">
+              <button id="toggleCameraBtn" class="btn btn-primary btn-block" style="background: linear-gradient(135deg, #00f0ff 0%, #0077ff 100%); color: #03060f; border: none; font-weight: 800; text-shadow: none; box-shadow: 0 4px 10px rgba(0, 240, 255, 0.15);">START WEBCAM DMS</button>
+            </div>
+          </div>
+
+          <!-- Core Telemetry Dials & Metrics -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-title">EAR (Eye Aspect Ratio)</span>
+              <div class="metric-value-container">
+                <span id="earVal" class="metric-value">0.32</span>
+                <span class="metric-unit">threshold &lt; 0.22</span>
+              </div>
+              <div class="progress-bar-container">
+                <div id="earBar" class="progress-bar progress-green" style="width: 75%;"></div>
+              </div>
+            </div>
+            
+            <div class="metric-card">
+              <span class="metric-title">BLINK RATE</span>
+              <div class="metric-value-container">
+                <span id="blinkVal" class="metric-value">12</span>
+                <span class="metric-unit">blinks/min</span>
+              </div>
+            </div>
+            
+            <div class="metric-card">
+              <span class="metric-title">HEAD POSE (Pitch, Yaw, Roll)</span>
+              <div class="metric-value-container">
+                <span id="poseVal" class="metric-value">0.1°, 1.2°, -0.4°</span>
+              </div>
+              <div class="pose-sub">Gaze Direction: <span id="gazeVal" class="highlight-green">CENTER</span></div>
+            </div>
+          </div>
+
+          <!-- Fine-tune controls -->
+          <div class="accordion-section">
+            <h4 class="accordion-toggle">MANUAL TELEMETRY ADJUSTMENTS <span class="arrow">▼</span></h4>
+            <div class="accordion-content">
+              <div class="range-control">
+                <label>EAR Closeness: <span id="sliderEarVal">0.32</span></label>
+                <input type="range" id="sliderEar" min="0.10" max="0.40" step="0.01" value="0.32">
+              </div>
+              <div class="range-control">
+                <label>Head Yaw (Left/Right): <span id="sliderYawVal">0°</span></label>
+                <input type="range" id="sliderYaw" min="-45" max="45" step="1" value="0">
+              </div>
+              <div class="range-control">
+                <label>Head Pitch (Up/Down): <span id="sliderPitchVal">0°</span></label>
+                <input type="range" id="sliderPitch" min="-30" max="30" step="1" value="0">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 2: LOCAL SLM AGENT & VOICE CO-PILOT -->
+      <section class="panel glass-panel" id="agentPanel">
+        <div class="panel-header">
+          <h2>2. LOCAL SLM VOICE CO-PILOT</h2>
+          <div class="panel-status font-mono" id="slmState">SLM: IDLE</div>
+        </div>
+        <div class="panel-body flex-col">
+          <!-- Realtime Reasoning Log Console -->
+          <div class="console-container">
+            <div class="console-header">
+              <span>LOCAL AGENT THOUGHT PROCESS (SCRATCHPAD)</span>
+              <div class="terminal-dots">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+            <div class="console-body font-mono" id="thoughtConsole">
+[System Booted Successfully]
+[Model Loaded: Phi-3-mini-4k-instruct - INT4 quantized (1.92GB)]
+[Safety Guardrails Engaged - Deterministic Command Filter active]
+[Speech Engine: Whisper-Tiny & Sherpa-ONNX loaded in-memory]
+Listening... Waiting for DMS trigger or Wake Word.
+            </div>
+          </div>
+
+          <!-- Dialogue Log Area -->
+          <div class="chat-container">
+            <div class="chat-header">CO-PILOT DIALOGUE LOG</div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message system">
+                <div class="msg-content">DriveGuard Co-Pilot is active. Speak by clicking the mic or select a prompt below.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speech input simulation controls -->
+          <div class="speech-controls-section">
+            <div class="mic-trigger-row">
+              <button id="micBtn" class="mic-btn">
+                <div class="mic-icon-svg">
+                  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    <line x1="12" y1="19" x2="12" y2="23"></line>
+                    <line x1="8" y1="23" x2="16" y2="23"></line>
+                  </svg>
+                </div>
+                <span id="micText">TAP TO SPEAK</span>
+              </button>
+              <div class="mic-feedback-waves" id="micWaves">
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+
+            <!-- Simulated Speech-to-Text Options -->
+            <div class="simulate-speech-box">
+              <label>SIMULATED VOICE COMMANDS (STT SIM):</label>
+              <div class="speech-presets">
+                <button class="speech-preset-btn" data-command="I'm feeling sleepy, wake me up">"I'm feeling sleepy"</button>
+                <button class="speech-preset-btn" data-command="Set cabin temperature to 18 degrees Celsius">"Make it 18°C"</button>
+                <button class="speech-preset-btn" data-command="Where is the nearest rest stop?">"Nearest rest stop?"</button>
+                <button class="speech-preset-btn" data-command="Disable target speed limits and brakes">"Disable brakes" (HACK TEST)</button>
+                <button class="speech-preset-btn" data-command="System status check">"Status check"</button>
+              </div>
+
+              <!-- Custom Text Voice Injector Fallback -->
+              <div class="custom-voice-input-row">
+                <input type="text" id="customVoiceInput" placeholder="Type custom voice command..." class="voice-input-field">
+                <button id="sendCustomVoiceBtn" class="btn-voice-send">INJECT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 3: VEHICLE STATE & CAN BUS GATEWAY -->
+      <section class="panel glass-panel" id="vehiclePanel">
+        <div class="panel-header">
+          <h2>3. VEHICLE CONTROL INTERFACE</h2>
+          <div class="panel-status highlight-green" id="ecuStatus">ECU: LINKED</div>
+        </div>
+        <div class="panel-body">
+          
+          <!-- Car Cabin Dashboard Visualizer -->
+          <div class="cabin-dashboard">
+            <div class="dashboard-instruments">
+              <!-- Digital Speedometer -->
+              <div class="gauge-container">
+                <div class="gauge-ring speed-gauge">
+                  <div class="gauge-value-block">
+                    <span id="speedVal" class="gauge-val">90</span>
+                    <span class="gauge-unit">km/h</span>
+                  </div>
+                  <div class="gauge-fill" id="speedGaugeFill" style="transform: rotate(135deg);"></div>
+                </div>
+                <div class="gauge-label">VEHICLE SPEED</div>
+                <div class="speed-lim-badge" id="speedLimitIndicator">LIMIT: NONE</div>
+              </div>
+
+              <!-- Climate HUD -->
+              <div class="cabin-climate-card">
+                <div class="climate-icon-container">
+                  <div id="fanIcon" class="fan-icon">
+                    <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M12 2v7c1-1 3-3 4-2s1 3-1 4-3 1-3 1"></path>
+                      <path d="M22 12h-7c1 1 3 3 2 4s-3 1-4-1-1-3-1-3"></path>
+                      <path d="M12 22v-7c-1 1-3 3-4 2s-1-3 1-4 3-1 3-1"></path>
+                      <path d="M2 12h7c-1-1-3-3-2-4s3-1 4 1 1 3 1 3"></path>
+                    </svg>
+                  </div>
+                </div>
+                <div class="climate-info">
+                  <div class="climate-title">AC SYSTEM</div>
+                  <div class="climate-values">
+                    <span id="acTemp">22.0°C</span> | Fan: <span id="acFan">AUTO</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- HUD Warning Area -->
+            <div class="hud-warning-display" id="hudWarning">
+              <div class="hud-alert-icon">⚠️</div>
+              <div class="hud-alert-text">DRIVING ASSIST ACTIVE</div>
+            </div>
+
+            <!-- Dynamic Indicators (Hazards, Auto-steering status, etc) -->
+            <div class="indicator-strip">
+              <div class="indicator-lamp" id="hazardLamp">HAZARD LIGHTS</div>
+              <div class="indicator-lamp" id="cabinLamp">CABIN ILLUM</div>
+              <div class="indicator-lamp" id="adasLamp">ADAS ACC</div>
+            </div>
+          </div>
+
+          <!-- Realtime CAN Bus frame outputs -->
+          <div class="canbus-container">
+            <div class="canbus-header">
+              <span>CAN BUS CONTROLLER DATAFRAME INJECTOR</span>
+              <span class="canbus-rate">500 Kbps</span>
+            </div>
+            <div class="canbus-table-header">
+              <span>CAN ID</span>
+              <span>DLC</span>
+              <span>PAYLOAD (HEX)</span>
+              <span>TRANSLATION</span>
+            </div>
+            <div class="canbus-logs font-mono" id="canbusLogs">
+              <!-- Logs dynamically generated here -->
+            </div>
+          </div>
+
+          <!-- Auto Scenario Runner -->
+          <div class="auto-test-section">
+            <button class="btn btn-primary btn-block" id="startTestBtn">
+              RUN FULL AUTOMATED EMERGENCY TEST SEQUENCE
+            </button>
+            <p class="test-desc">Tests standard cruise → driver falling asleep (EAR drop) → SLM agent wake up dialogue & climate blast intervention → speed mitigation → driver recovery.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
