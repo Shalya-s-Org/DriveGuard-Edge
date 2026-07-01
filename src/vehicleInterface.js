@@ -153,14 +153,14 @@ export class VehicleInterface {
     
     // Draw logs in reverse order so newest is at bottom (or auto scroll to bottom)
     this.canHistory.forEach(pkt => {
-      const packetRow = document.createElement('div');
-      packetRow.className = `can-packet ${pkt.isOverride ? 'override-pulse' : 'new-pulse'}`;
+      const packetRow = document.createElement('tr');
+      packetRow.className = `border-b border-outline/50 hover:bg-surface-container-high cursor-pointer transition-colors ${pkt.isOverride ? 'text-error font-semibold bg-error/5 animate-pulse' : 'text-gray-300'}`;
       
       packetRow.innerHTML = `
-        <span class="can-id">${pkt.id}</span>
-        <span class="can-dlc">${pkt.dlc}</span>
-        <span class="can-data">${pkt.payload}</span>
-        <span class="can-desc">${pkt.translation}</span>
+        <td class="py-1.5 px-3 font-mono">${pkt.id}</td>
+        <td class="py-1.5 px-3 font-mono">${pkt.dlc}</td>
+        <td class="py-1.5 px-3 font-mono text-brand">${pkt.payload}</td>
+        <td class="py-1.5 px-3 font-mono truncate max-w-[150px]">${pkt.translation}</td>
       `;
       this.logsContainer.appendChild(packetRow);
     });
@@ -247,12 +247,12 @@ export class VehicleInterface {
   setHUDWarning(text, level = 'normal') {
     this.hudWarningEl.textContent = text.toUpperCase();
     if (level === 'hazard') {
-      this.hudWarningEl.className = 'hud-warning-display hazard';
+      this.hudWarningEl.className = 'bg-error-dim border border-error text-error text-center py-3 rounded font-bold uppercase tracking-widest text-sm shadow-neon-error font-display animate-pulse transition-all duration-300';
       
       const payload = [100, 1, 0, 0, 0, 0, 0, 0]; // 100 => Alert Intensity level, 1 => Flash HUD
       this.injectCANMessage('0x0F2', 8, payload, `DMS WARNING INJECT: Level=CRITICAL Text=${text}`, true);
     } else {
-      this.hudWarningEl.className = 'hud-warning-display';
+      this.hudWarningEl.className = 'bg-brand-dim border border-brand text-brand text-center py-3 rounded font-bold uppercase tracking-widest text-sm shadow-neon font-display transition-all duration-300';
       
       const payload = [0, 0, 0, 0, 0, 0, 0, 0];
       this.injectCANMessage('0x0F2', 8, payload, 'DMS STATE: COGNITIVE OVERWATCH STANDBY', false);

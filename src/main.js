@@ -285,20 +285,20 @@ function initializeDashboard() {
       // Update EAR progress bar coloring
       earBar.style.width = `${Math.min(100, (metrics.ear / 0.40) * 100)}%`;
       if (metrics.ear < 0.22) {
-        earVal.className = 'metric-value warning';
-        earBar.className = 'progress-bar progress-red';
+        earVal.className = 'text-error text-glow animate-pulse';
+        earBar.className = 'h-full bg-error transition-all duration-300';
         dmsStatus.textContent = 'CRITICAL ALERT';
-        dmsStatus.className = 'panel-status alert';
+        dmsStatus.className = 'px-2 py-1 text-[10px] font-mono border border-error text-error rounded bg-error-dim animate-pulse';
       } else if (metrics.ear < 0.26) {
-        earVal.className = 'metric-value';
-        earBar.className = 'progress-bar progress-amber';
+        earVal.className = 'text-warning text-glow';
+        earBar.className = 'h-full bg-warning transition-all duration-300';
         dmsStatus.textContent = 'ATTENTION SLOW';
-        dmsStatus.className = 'panel-status alert';
+        dmsStatus.className = 'px-2 py-1 text-[10px] font-mono border border-warning text-warning rounded bg-warning/10';
       } else {
-        earVal.className = 'metric-value';
-        earBar.className = 'progress-bar progress-green';
+        earVal.className = 'text-white';
+        earBar.className = 'h-full bg-success transition-all duration-300';
         dmsStatus.textContent = 'MONITORING';
-        dmsStatus.className = 'panel-status';
+        dmsStatus.className = 'px-2 py-1 text-[10px] font-mono border border-success text-success rounded';
       }
 
       blinkVal.textContent = metrics.blinkRate;
@@ -306,9 +306,9 @@ function initializeDashboard() {
       
       gazeVal.textContent = metrics.gazeDirection;
       if (metrics.gazeDirection === 'CENTER') {
-        gazeVal.className = 'highlight-green';
+        gazeVal.className = 'text-success text-glow';
       } else {
-        gazeVal.className = 'highlight-blue';
+        gazeVal.className = 'text-brand text-glow';
       }
 
       // 9. Passive DMS Threshold Monitoring (Auto Alert triggers)

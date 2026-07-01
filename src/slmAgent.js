@@ -58,13 +58,13 @@ export class SLMAgent {
     
     // UI styles based on state
     if (newState === 'THINKING') {
-      this.slmStateEl.className = 'panel-status highlight-blue';
+      this.slmStateEl.className = 'px-2 py-1 text-[10px] font-mono border border-brand text-brand rounded bg-brand-dim/10';
     } else if (newState === 'SPEAKING') {
-      this.slmStateEl.className = 'panel-status highlight-green';
+      this.slmStateEl.className = 'px-2 py-1 text-[10px] font-mono border border-success text-success rounded bg-success/10';
     } else if (newState === 'LISTENING') {
-      this.slmStateEl.className = 'panel-status alert';
+      this.slmStateEl.className = 'px-2 py-1 text-[10px] font-mono border border-error text-error rounded bg-error-dim animate-pulse';
     } else {
-      this.slmStateEl.className = 'panel-status font-mono';
+      this.slmStateEl.className = 'px-2 py-1 text-[10px] font-mono border border-outline text-gray-400 rounded';
     }
   }
 
@@ -81,18 +81,35 @@ export class SLMAgent {
   // Append speech chat bubbles
   addMessage(sender, text, isHazard = false) {
     const msg = document.createElement('div');
-    msg.className = `message ${sender} ${isHazard ? 'hazard-alert' : ''}`;
-    
-    const author = document.createElement('span');
-    author.className = 'msg-author';
-    author.textContent = sender === 'driver' ? 'DRIVER (VOICE)' : 'CO-PILOT (LOCAL SLM)';
-    
-    const content = document.createElement('div');
-    content.className = 'msg-content';
-    content.textContent = text;
-
-    msg.appendChild(author);
-    msg.appendChild(content);
+    if (sender === 'driver') {
+      msg.className = 'self-end max-w-[85%] flex flex-col items-end shrink-0';
+      msg.innerHTML = `
+        <div class="text-[10px] font-bold text-brand uppercase mb-1 tracking-wider font-display">DRIVER (VOICE)</div>
+        <div class="bg-surface-container border border-brand/50 p-3 rounded-l-lg rounded-br-lg text-sm text-white">
+          ${text}
+        </div>
+      `;
+    } else if (sender === 'system') {
+      msg.className = 'text-center text-xs text-gray-500 italic my-1 w-full shrink-0';
+      msg.innerHTML = `${text}`;
+    } else { // copilot
+      msg.className = 'self-start max-w-[85%] flex flex-col items-start shrink-0';
+      if (isHazard) {
+        msg.innerHTML = `
+          <div class="text-[10px] font-bold text-error uppercase mb-1 tracking-wider font-display">CO-PILOT (LOCAL SLM)</div>
+          <div class="bg-error-dim border border-error p-3 rounded-r-lg rounded-bl-lg text-sm text-white shadow-neon-error">
+            ${text}
+          </div>
+        `;
+      } else {
+        msg.innerHTML = `
+          <div class="text-[10px] font-bold text-success uppercase mb-1 tracking-wider font-display">CO-PILOT (LOCAL SLM)</div>
+          <div class="bg-surface border border-success p-3 rounded-r-lg rounded-bl-lg text-sm text-white">
+            ${text}
+          </div>
+        `;
+      }
+    }
     this.chatMessages.appendChild(msg);
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
@@ -583,7 +600,7 @@ export class SLMAgent {
       this.vehicle.setHUDWarning('CRITICAL DROWSINESS ALERT', 'hazard');
       document.body.classList.add('hazard-active');
 
-      const alertSpeak = "Drowsiness alert. Wake up! I have activated cabin cooling cooling, emergency hazard flashers, and lowered the vehicle cruise speed limit.";
+      const alertSpeak = "Drowsiness alert. Wake up! I have activated cabin cooling, emergency hazard flashers, and lowered the vehicle cruise speed limit.";
       this.addMessage('copilot', alertSpeak, true);
       this.speak(alertSpeak, true);
       this.logThought('[Action Status] Override frames injected. Speed cap=40km/h. AC Fan=MAX.');
