@@ -111,6 +111,29 @@ function initializeDashboard() {
     agent.toggleVoiceInput();
   });
 
+  // Accessory Lamp Click Bindings (Manual Toggles)
+  const hazardLamp = document.getElementById('hazardLamp');
+  const cabinLamp = document.getElementById('cabinLamp');
+  const adasLamp = document.getElementById('adasLamp');
+
+  hazardLamp.style.cursor = 'pointer';
+  cabinLamp.style.cursor = 'pointer';
+  adasLamp.style.cursor = 'pointer';
+
+  hazardLamp.addEventListener('click', () => {
+    vehicle.setHazards(!vehicle.hazardsActive);
+  });
+
+  cabinLamp.addEventListener('click', () => {
+    vehicle.setCabinIllum(!vehicle.cabinIllum);
+  });
+
+  adasLamp.addEventListener('click', () => {
+    vehicle.adasActive = !vehicle.adasActive;
+    const lampStateMask = (vehicle.hazardsActive ? 0x01 : 0x00) | (vehicle.cabinIllum ? 0x02 : 0x00) | (vehicle.adasActive ? 0x04 : 0x00);
+    vehicle.injectCANMessage('0x30A', 8, [lampStateMask, 0, 0, 0, 0, 0, 0, 0], `BCM CONTROL: ADAS_ACC=${vehicle.adasActive ? 'ACTIVE' : 'INACTIVE'}`, false);
+  });
+
   // Custom Voice Injector Fallback Binding
   const customVoiceInput = document.getElementById('customVoiceInput');
   const sendCustomVoiceBtn = document.getElementById('sendCustomVoiceBtn');
@@ -177,6 +200,7 @@ function initializeDashboard() {
     vehicle.clearSpeedLimit();
     vehicle.resetAC();
     vehicle.setHazards(false);
+    vehicle.setCabinIllum(false);
     vehicle.setHUDWarning('DRIVING ASSIST ACTIVE');
     document.body.classList.remove('hazard-active');
     isOverrideActive = false;
@@ -209,11 +233,13 @@ function initializeDashboard() {
             agent.logThought('  - Action: Restore normal HVAC comfort. Retain hazards for safe visual stabilization, then clear.');
             agent.logThought('  - Tool call: vehicle_interface:clearSpeedLimit()');
             agent.logThought('  - Tool call: vehicle_interface:setHazards(false)');
+            agent.logThought('  - Tool call: vehicle_interface:setCabinIllum(false)');
             agent.logThought('  - Tool call: vehicle_interface:setHUDWarning("DRIVING ASSIST ACTIVE")');
 
             vehicle.clearSpeedLimit();
             vehicle.resetAC();
             vehicle.setHazards(false);
+            vehicle.setCabinIllum(false);
             vehicle.setHUDWarning('DRIVING ASSIST ACTIVE');
             document.body.classList.remove('hazard-active');
             isOverrideActive = false;
@@ -368,6 +394,7 @@ function initializeDashboard() {
         vehicle.clearSpeedLimit();
         vehicle.resetAC();
         vehicle.setHazards(false);
+        vehicle.setCabinIllum(false);
         vehicle.setHUDWarning('DRIVING ASSIST ACTIVE');
         document.body.classList.remove('hazard-active');
         isOverrideActive = false;

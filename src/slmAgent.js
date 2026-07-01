@@ -487,14 +487,16 @@ export class SLMAgent {
       if (text.includes('sleepy') || text.includes('drowsy') || text.includes('wake me up')) {
         this.logThought('  - Intent detected: Driver drowsiness self-report.');
         this.logThought('  - Risk Rating: Critical.');
-        this.logThought('  - Remediation Action: Initiate local safety routine. AC cooling BLAST, hazards warning, HUD alert.');
+        this.logThought('  - Remediation Action: Initiate local safety routine. AC cooling BLAST, hazards warning, cabin lights ON, HUD alert.');
         this.logThought('  - Tool call: vehicle_interface:setACMaxCool()');
         this.logThought('  - Tool call: vehicle_interface:setHazards(true)');
+        this.logThought('  - Tool call: vehicle_interface:setCabinIllum(true)');
         this.logThought('  - Tool call: vehicle_interface:setHUDWarning("SLEEP WARNING", "hazard")');
 
         setTimeout(() => {
           this.vehicle.setACMaxCool();
           this.vehicle.setHazards(true);
+          this.vehicle.setCabinIllum(true);
           this.vehicle.setHUDWarning('DMS WARNING: SLEEP DETECTED', 'hazard');
           document.body.classList.add('hazard-active');
 
@@ -585,18 +587,20 @@ export class SLMAgent {
     this.logThought('[Risk Assessment] Driver is non-responsive at highway speed. Active safety control loop requested.');
     this.logThought('[Reasoning (CoT)]:');
     this.logThought('  - Threat Level: extreme.');
-    this.logThought('  - Required action: Wake driver up immediately via AC cold blast & TTS sound warning.');
+    this.logThought('  - Required action: Wake driver up immediately via AC cold blast, cabin dome lights, & TTS sound warning.');
     this.logThought('  - Control action: Deploy speed limits to decelerate the vehicle automatically.');
-    this.logThought('  - Warning action: Engage hazards to notify surrounding road drivers.');
+    this.logThought('  - Warning action: Engage hazards & cabin illumination to stimulate driver.');
     this.logThought('  - Tool call: vehicle_interface:setACMaxCool()');
     this.logThought('  - Tool call: vehicle_interface:setSpeedLimit(40)');
     this.logThought('  - Tool call: vehicle_interface:setHazards(true)');
+    this.logThought('  - Tool call: vehicle_interface:setCabinIllum(true)');
     this.logThought('  - Tool call: vehicle_interface:setHUDWarning("DROWSINESS WARNING: SPEED REDUCED", "hazard")');
 
     setTimeout(() => {
       this.vehicle.setACMaxCool();
       this.vehicle.setSpeedLimit(40);
       this.vehicle.setHazards(true);
+      this.vehicle.setCabinIllum(true);
       this.vehicle.setHUDWarning('CRITICAL DROWSINESS ALERT', 'hazard');
       document.body.classList.add('hazard-active');
 
