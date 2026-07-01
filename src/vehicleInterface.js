@@ -30,7 +30,7 @@ export class VehicleInterface {
     
     // UI elements references
     this.speedValEl = document.getElementById('speedVal');
-    this.speedGaugeFillEl = document.getElementById('speedGaugeFill');
+    this.speedTrackFillEl = document.getElementById('speedTrackFill');
     this.acTempEl = document.getElementById('acTemp');
     this.acFanEl = document.getElementById('acFan');
     this.fanIconEl = document.getElementById('fanIcon');
@@ -67,9 +67,17 @@ export class VehicleInterface {
     const speedInt = Math.round(this.speed);
     this.speedValEl.textContent = speedInt;
     
-    // Gauge fill rotation (-135deg to +135deg depending on speed 0 to 180 km/h)
-    const rotation = -135 + (speedInt / 180) * 270;
-    this.speedGaugeFillEl.style.transform = `rotate(${rotation}deg)`;
+    // Update SVG stroke-dashoffset (fills gauge ring progressively from 198 to 0)
+    const activeLength = 198;
+    const offset = activeLength - (speedInt / 180) * activeLength;
+    this.speedTrackFillEl.style.strokeDashoffset = Math.max(0, Math.min(activeLength, offset));
+    
+    // Toggle color of SVG stroke if speed limit override is active
+    if (this.speedLimit !== null) {
+      this.speedTrackFillEl.style.stroke = 'var(--alert-red)';
+    } else {
+      this.speedTrackFillEl.style.stroke = 'var(--primary-cyber)';
+    };
     
     if (this.speedLimit !== null) {
       this.speedValEl.classList.add('hazard');

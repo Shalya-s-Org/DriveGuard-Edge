@@ -217,11 +217,14 @@ Listening... Waiting for DMS trigger or Wake Word.
               <!-- Digital Speedometer -->
               <div class="gauge-container">
                 <div class="gauge-ring speed-gauge">
+                  <svg class="speed-svg" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="42" stroke="rgba(255, 255, 255, 0.03)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="198 264" transform="rotate(135 50 50)"></circle>
+                    <circle id="speedTrackFill" cx="50" cy="50" r="42" stroke="var(--primary-cyber)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="198 264" stroke-dashoffset="198" transform="rotate(135 50 50)"></circle>
+                  </svg>
                   <div class="gauge-value-block">
                     <span id="speedVal" class="gauge-val">90</span>
                     <span class="gauge-unit">km/h</span>
                   </div>
-                  <div class="gauge-fill" id="speedGaugeFill" style="transform: rotate(135deg);"></div>
                 </div>
                 <div class="gauge-label">VEHICLE SPEED</div>
                 <div class="speed-lim-badge" id="speedLimitIndicator">LIMIT: NONE</div>
